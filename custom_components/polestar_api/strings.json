@@ -22,6 +22,9 @@
     "binary_sensor": {
       "polestar_api_connected": {
         "name": "API Connected"
+      },
+      "polestar_central_lock_unlocked": {
+        "name": "Central Lock"
       }
     },
     "image": {

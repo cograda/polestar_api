@@ -38,6 +38,13 @@ ENTITY_DESCRIPTIONS: Final[tuple[BinarySensorEntityDescription, ...]] = (
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    # Read-only — fetched via a single gRPC ExteriorService call over this
+    # integration's own already-authenticated channel, see _exterior_lock.py.
+    # BinarySensorDeviceClass.LOCK: on = open/unlocked, off = closed/locked.
+    PolestarBinarySensorEntityDescription(
+        key="central_lock_unlocked",
+        device_class=BinarySensorDeviceClass.LOCK,
+    ),
 )
 
 

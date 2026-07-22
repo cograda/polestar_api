@@ -19,6 +19,7 @@ from pypolestar.models import (
     CarOdometerData,
 )
 
+from ._exterior_lock import CentralLockStatus, async_get_central_lock_status
 from .const import CAR_INFORMATION_UPDATE_INTERVAL, DEFAULT_SCAN_INTERVAL
 
 if TYPE_CHECKING:
@@ -129,6 +130,25 @@ class PolestarCoordinator(DataUpdateCoordinator):
 
             if not self.grpc_target_soc_data:
                 _LOGGER.debug("No gRPC target SOC data for VIN %s", self.vin)
+
+            # Read-only central lock status, same best-effort treatment as the
+            # gRPC calls above — reuses this integration's own already-open
+            # C3 channel/token, no new auth or write capability. See
+            # _exterior_lock.py for why this needs its own tiny decoder.
+            central_lock_status: CentralLockStatus | None = None
+            grpc_client = self.polestar_api.grpc_client
+            access_token = self.polestar_api.auth.access_token
+            if grpc_client and grpc_client.c3_channel and access_token:
+                central_lock_status = await async_get_central_lock_status(
+                    grpc_client.c3_channel, self.vin, access_token
+                )
+            if central_lock_status is None:
+                _LOGGER.debug("No central lock status for VIN %s", self.vin)
+                res["central_lock_unlocked"] = None
+            else:
+                res["central_lock_unlocked"] = (
+                    central_lock_status == CentralLockStatus.UNLOCKED
+                )
 
         except PolestarAuthFailedException as exc:
             _LOGGER.error("Authentication failed for VIN %s: %s", self.vin, str(exc))
